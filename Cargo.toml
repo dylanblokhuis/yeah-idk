@@ -1,0 +1,29 @@
+[package]
+name = "jsc-test"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[dependencies]
+rusty_jsc = "0.0.2"
+rusty_jsc_macros = "0.0.2"
+rusty_jsc_sys = "0.0.2"
+anyhow = "1.0.65"
+axum = { version = "0.5.16", features = ["axum-macros"] }
+axum-macros = "0.2.3"
+surrealdb = "1.0.0-beta.7"
+tokio = { version = "1.21.1", features = ["full"] }
+swc = "0.226.27"
+swc_bundler = "0.187.26"
+swc_common = { version = "0.28.7", features = ["concurrent"] }
+swc_ecma_ast = "0.91.7"
+swc_ecma_codegen = "0.124.13"
+swc_ecma_loader = { version = "0.40.7", features = ["lru"] }
+swc_ecma_parser = "0.119.11"
+swc_ecma_transforms_base = "0.108.17"
+swc_ecma_transforms_proposal = "0.139.19"
+swc_ecma_transforms_react = "0.150.20"
+swc_ecma_transforms_typescript = "0.154.20"
+swc_ecma_visit = "0.77.8"
+path-clean = "0.1.0"
+
