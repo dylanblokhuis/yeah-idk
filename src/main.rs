@@ -1,12 +1,16 @@
 use std::net::SocketAddr;
+use std::path::Path;
 
 use axum::http::StatusCode;
 use axum::response::Result;
 use axum::{response::Html, routing::get};
 use axum::{Extension, Router};
 use database::Db;
-use rusty_jsc::JSContext;
 
+use rquickjs::{Func, Object};
+use tower_http::trace::TraceLayer;
+use tracing_subscriber::prelude::__tracing_subscriber_SubscriberExt;
+use tracing_subscriber::util::SubscriberInitExt;
 use tsx::compile_app;
 
 mod database;
@@ -14,38 +18,90 @@ mod tsx;
 
 #[tokio::main]
 async fn main() {
+    tracing_subscriber::registry()
+        .with(tracing_subscriber::EnvFilter::new(
+            std::env::var("RUST_LOG")
+                .unwrap_or_else(|_| "experimental-cms=debug,tower_http=debug".into()),
+        ))
+        .with(tracing_subscriber::fmt::layer())
+        .init();
+
     let db = Db::new("test".into(), "test".into(), "file://temp.db".into()).await;
+    let runtime = rquickjs::Runtime::new().unwrap();
 
-    let app = Router::new().route("/", get(response)).layer(Extension(db));
+    let app = Router::new()
+        .route("/", get(home))
+        .route("/admin", get(admin))
+        .route("/admin/posts", get(admin_posts))
+        .layer(Extension(db))
+        .layer(Extension(runtime))
+        .layer(TraceLayer::new_for_http());
 
-    // run it asdasd
     let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
-    println!("Listening on http://{}", addr);
+    tracing::info!("Listening on http://{}", addr);
     axum::Server::bind(&addr)
         .serve(app.into_make_service())
         .await
         .unwrap();
 }
 
-async fn response(Extension(db): Extension<Db>) -> Result<Html<String>, StatusCode> {
-    let res = db.query("SELECT * FROM account;").await;
+fn print(msg: String) {
+    println!("{}", msg);
+}
 
-    println!("{:?}", res);
+fn template(path: &Path, data: String) -> Html<String> {
+    let js = compile_app(path, data);
 
-    let js = compile_app();
+    std::fs::write("out.js", &js).unwrap();
 
-    //println!("js: {}", js);
-    std::fs::write("./out.js", &js).unwrap();
-    let mut context = JSContext::default();
-    match context.evaluate_script(&js, 1) {
-        Some(value) => Ok(Html(value.to_string(&context))),
-        None => {
-            println!(
-                "Uncaught: {}",
-                context.get_exception().unwrap().to_string(&context)
-            );
+    let runtime = rquickjs::Runtime::new().unwrap();
+    let ctx = rquickjs::Context::full(&runtime).unwrap();
+    let result = ctx.with(|ctx| {
+        let global = ctx.globals();
+        let obj = Object::new(ctx).unwrap();
+        obj.set("log", Func::new("print", print)).unwrap();
+        global.set("console", obj).unwrap();
 
-            Err(StatusCode::INTERNAL_SERVER_ERROR)
-        }
-    }
+        ctx.eval::<String, String>(js).unwrap()
+    });
+
+    Html(result)
+}
+
+async fn home(// Extension(db): Extension<Db>,
+    // Extension(runtime): Extension<Runtime>,
+) -> Result<Html<String>, StatusCode> {
+    let result = template(Path::new("index.tsx"), "[]".into());
+
+    Ok(result)
+}
+
+async fn admin(// Extension(db): Extension<Db>,
+    // Extension(runtime): Extension<Runtime>,
+) -> Result<Html<String>, StatusCode> {
+    let result = template(Path::new("admin.tsx"), "[]".into());
+
+    Ok(result)
+}
+
+async fn admin_posts(
+    Extension(db): Extension<Db>,
+    // Extension(runtime): Extension<Runtime>,
+) -> Result<Html<String>, StatusCode> {
+    db.query("CREATE post SET name = 'Hello World!', content = 'This is the content';")
+        .await
+        .unwrap();
+
+    let posts = db.query("SELECT * FROM post").await.unwrap();
+
+    // for post in posts {
+    //     println!("{}", post.as_string());
+    //     // post.ser
+    // }
+
+    let data = serde_json::to_string(&posts).unwrap();
+
+    let result = template(Path::new("admin/posts.tsx"), data);
+
+    Ok(result)
 }

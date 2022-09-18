@@ -1,15 +1,13 @@
-import React from './react';
-import Test from "./test"
+import React from 'react';
 
-export default function Root() {
+export default function Root({ children }: { children: React.ReactNode }) {
   return (
     <html>
       <head>
         <title>Hello World</title>
       </head>
       <body>
-        <h1>Hello World</h1>
-        <Test />
+        {children}
       </body>
     </html>
   )

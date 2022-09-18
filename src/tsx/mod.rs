@@ -26,15 +26,21 @@ use swc_ecma_transforms_react::react;
 use swc_ecma_transforms_typescript::strip;
 use swc_ecma_visit::FoldWith;
 
-pub fn compile_app() -> String {
+pub fn compile_app(path: &Path, data: String) -> String {
     let globals = Globals::new();
-    let cm = Lrc::new(SourceMap::new(FilePathMapping::empty()));
+    let cm = std::sync::Arc::new(SourceMap::new(FilePathMapping::empty()));
     // let external_modules = vec![];
+    let mut import_map: HashMap<String, PathBuf> = HashMap::new();
+    import_map.insert("react".into(), "./react.js".into());
+    import_map.insert("react-dom".into(), "./react-dom.js".into());
+    import_map.insert("$route".into(), Path::new("./routes/").join(path));
+    import_map.insert("$lib".into(), "./lib.tsx".into());
+
     let mut bundler = Bundler::new(
         &globals,
         cm.clone(),
         PathLoader { cm: cm.clone() },
-        NodeResolver,
+        Resolver { import_map },
         Config {
             require: true,
             disable_inliner: false,
@@ -46,13 +52,15 @@ pub fn compile_app() -> String {
     entries.insert("main".to_string(), FileName::Real("./js/app.tsx".into()));
     let mut bundles = bundler.bundle(entries).expect("failed to bundle");
     let bundle = bundles.pop().unwrap();
-
     let mut buf = vec![];
+    let s = format!("globalThis.routeData = {};\n", data);
+    buf.append(&mut s.into());
+
     let wr = JsWriter::new(cm.clone(), "\n", &mut buf, None);
 
     let mut emitter = Emitter {
         cfg: swc_ecma_codegen::Config {
-            minify: true,
+            minify: false,
             ..Default::default()
         },
         cm,
@@ -159,11 +167,13 @@ impl swc_bundler::Hook for Hook {
     }
 }
 
-pub struct NodeResolver;
+pub struct Resolver {
+    import_map: HashMap<String, PathBuf>,
+}
 
 static EXTENSIONS: &[&str] = &["ts", "tsx", "js", "jsx", "json", "node"];
 
-impl NodeResolver {
+impl Resolver {
     fn wrap(&self, path: PathBuf) -> Result<FileName, Error> {
         let path = path.clean();
         Ok(FileName::Real(path))
@@ -273,7 +283,7 @@ impl NodeResolver {
     }
 }
 
-impl Resolve for NodeResolver {
+impl Resolve for Resolver {
     fn resolve(&self, base: &FileName, target: &str) -> Result<FileName, Error> {
         let base = match base {
             FileName::Real(v) => v,
@@ -313,6 +323,14 @@ impl Resolve for NodeResolver {
             return self
                 .resolve_as_file(&path)
                 .or_else(|_| self.resolve_as_directory(&path))
+                .and_then(|p| self.wrap(p));
+        }
+
+        if let Some(import_map) = self.import_map.get(target) {
+            let cwd = std::env::current_dir().unwrap();
+            let base_js = cwd.join("./js");
+            return self
+                .resolve_as_file(&base_js.join(import_map))
                 .and_then(|p| self.wrap(p));
         }
 

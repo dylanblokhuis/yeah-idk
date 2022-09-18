@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    "jsx": "react",
+    "baseUrl": "./js",
+    "paths": {
+      "react": ["./react.js"],
+      "react-dom": ["./react-dom.js"],
+      "$lib": ["./lib.tsx"]
+    }
+  }
+}

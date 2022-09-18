@@ -1,15 +1,12 @@
 [package]
-name = "jsc-test"
+name = "experimental-cms"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
-rusty_jsc = "0.0.2"
-rusty_jsc_macros = "0.0.2"
-rusty_jsc_sys = "0.0.2"
 anyhow = "1.0.65"
-axum = { version = "0.5.16", features = ["axum-macros"] }
+axum = "0.5.16"
 axum-macros = "0.2.3"
 surrealdb = "1.0.0-beta.7"
 tokio = { version = "1.21.1", features = ["full"] }
@@ -26,4 +23,10 @@ swc_ecma_transforms_react = "0.150.20"
 swc_ecma_transforms_typescript = "0.154.20"
 swc_ecma_visit = "0.77.8"
 path-clean = "0.1.0"
+rquickjs = "0.1.7"
+tracing = "0.1.36"
+tracing-subscriber = { version = "0.3.15", features = ["env-filter"] }
+tower-http = { version = "0.3.4", features = ["trace"] }
+serde = "1.0.144"
+serde_json = "1.0.85"
 
