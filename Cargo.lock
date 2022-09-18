@@ -393,6 +393,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "axum-flash"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d7921cf899d4750767a02787a26c5f6b462de923e5f4181d3bb96903683fff5f"
+dependencies = [
+ "async-trait",
+ "axum-core",
+ "base64",
+ "cookie 0.16.0",
+ "http",
+ "percent-encoding",
+ "serde",
+ "serde_json",
+ "tower-cookies",
+ "tower-layer",
+ "tower-service",
+]
+
+[[package]]
 name = "axum-macros"
 version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -724,6 +743,22 @@ dependencies = [
  "rand 0.8.5",
  "sha2 0.9.9",
  "time 0.2.27",
+ "version_check",
+]
+
+[[package]]
+name = "cookie"
+version = "0.16.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "94d4706de1b0fa5b132270cddffa8585166037822e260a944fe161acd137ca05"
+dependencies = [
+ "base64",
+ "hmac 0.12.1",
+ "percent-encoding",
+ "rand 0.8.5",
+ "sha2 0.10.6",
+ "subtle",
+ "time 0.3.14",
  "version_check",
 ]
 
@@ -1097,6 +1132,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "axum",
+ "axum-flash",
  "axum-macros",
  "path-clean",
  "rquickjs",
@@ -1546,7 +1582,7 @@ dependencies = [
  "async-channel",
  "async-std",
  "base64",
- "cookie",
+ "cookie 0.14.4",
  "futures-lite",
  "infer",
  "pin-project-lite",
@@ -2160,6 +2196,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "19e64526ebdee182341572e50e9ad03965aa510cd94427a4549448f285e957a1"
 dependencies = [
  "hermit-abi",
+ "libc",
+]
+
+[[package]]
+name = "num_threads"
+version = "0.1.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2819ce041d2ee131036f4fc9d6ae7ae125a3a40e97ba64d04fe799ad9dabbb44"
+dependencies = [
  "libc",
 ]
 
@@ -4181,9 +4226,21 @@ dependencies = [
  "libc",
  "standback",
  "stdweb",
- "time-macros",
+ "time-macros 0.1.1",
  "version_check",
  "winapi",
+]
+
+[[package]]
+name = "time"
+version = "0.3.14"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3c3f9a28b618c3a6b9251b6908e9c99e04b9e5c02e6581ccbb67d59c34ef7f9b"
+dependencies = [
+ "itoa",
+ "libc",
+ "num_threads",
+ "time-macros 0.2.4",
 ]
 
 [[package]]
@@ -4195,6 +4252,12 @@ dependencies = [
  "proc-macro-hack",
  "time-macros-impl",
 ]
+
+[[package]]
+name = "time-macros"
+version = "0.2.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "42657b1a6f4d817cda8e7a0ace261fe0cc946cf3a80314390b22cc61ae080792"
 
 [[package]]
 name = "time-macros-impl"
@@ -4279,6 +4342,23 @@ dependencies = [
  "tower-layer",
  "tower-service",
  "tracing",
+]
+
+[[package]]
+name = "tower-cookies"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "19833e336396f3953e5ab1513d72b5e5ea51d5ad39b78d306766a05740b48b97"
+dependencies = [
+ "async-trait",
+ "axum-core",
+ "cookie 0.16.0",
+ "futures-util",
+ "http",
+ "parking_lot",
+ "pin-project-lite",
+ "tower-layer",
+ "tower-service",
 ]
 
 [[package]]

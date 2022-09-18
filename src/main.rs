@@ -14,6 +14,7 @@ use tracing_subscriber::util::SubscriberInitExt;
 use tsx::compile_app;
 
 mod database;
+mod routers;
 mod tsx;
 
 #[tokio::main]
@@ -27,14 +28,12 @@ async fn main() {
         .init();
 
     let db = Db::new("test".into(), "test".into(), "file://temp.db".into()).await;
-    let runtime = rquickjs::Runtime::new().unwrap();
 
     let app = Router::new()
         .route("/", get(home))
-        .route("/admin", get(admin))
-        .route("/admin/posts", get(admin_posts))
+        .nest("/admin", routers::admin::router())
         .layer(Extension(db))
-        .layer(Extension(runtime))
+        .layer(axum_flash::layer(axum_flash::Key::generate()).with_cookie_manager())
         .layer(TraceLayer::new_for_http());
 
     let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
@@ -72,36 +71,6 @@ async fn home(// Extension(db): Extension<Db>,
     // Extension(runtime): Extension<Runtime>,
 ) -> Result<Html<String>, StatusCode> {
     let result = template(Path::new("index.tsx"), "[]".into());
-
-    Ok(result)
-}
-
-async fn admin(// Extension(db): Extension<Db>,
-    // Extension(runtime): Extension<Runtime>,
-) -> Result<Html<String>, StatusCode> {
-    let result = template(Path::new("admin.tsx"), "[]".into());
-
-    Ok(result)
-}
-
-async fn admin_posts(
-    Extension(db): Extension<Db>,
-    // Extension(runtime): Extension<Runtime>,
-) -> Result<Html<String>, StatusCode> {
-    db.query("CREATE post SET name = 'Hello World!', content = 'This is the content';")
-        .await
-        .unwrap();
-
-    let posts = db.query("SELECT * FROM post").await.unwrap();
-
-    // for post in posts {
-    //     println!("{}", post.as_string());
-    //     // post.ser
-    // }
-
-    let data = serde_json::to_string(&posts).unwrap();
-
-    let result = template(Path::new("admin/posts.tsx"), data);
 
     Ok(result)
 }

@@ -43,7 +43,9 @@ impl Db {
         let mut results = Vec::new();
 
         for response in responses {
-            results.push(response.result?.first());
+            if let Ok(value) = response.result {
+                results.push(value);
+            }
         }
 
         Ok(results)
