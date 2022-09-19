@@ -1,8 +1,9 @@
 use std::net::SocketAddr;
 use std::path::Path;
 
-use axum::http::StatusCode;
-use axum::response::Result;
+use axum::body::Body;
+use axum::http::{Request, StatusCode};
+use axum::response::IntoResponse;
 use axum::{response::Html, routing::get};
 use axum::{Extension, Router};
 use database::Db;
@@ -28,10 +29,11 @@ async fn main() {
         .init();
 
     let db = Db::new("test".into(), "test".into(), "file://temp.db".into()).await;
+    database::setup_structure(&db).await;
 
     let app = Router::new()
-        .route("/", get(home))
         .nest("/admin", routers::admin::router())
+        .fallback(get(page))
         .layer(Extension(db))
         .layer(axum_flash::layer(axum_flash::Key::generate()).with_cookie_manager())
         .layer(TraceLayer::new_for_http());
@@ -67,10 +69,26 @@ fn template(path: &Path, data: String) -> Html<String> {
     Html(result)
 }
 
-async fn home(// Extension(db): Extension<Db>,
+async fn page(
+    Extension(db): Extension<Db>,
+    request: Request<Body>,
     // Extension(runtime): Extension<Runtime>,
-) -> Result<Html<String>, StatusCode> {
-    let result = template(Path::new("index.tsx"), "[]".into());
+) -> impl IntoResponse {
+    let results = db
+        .query(&format!(
+            "SELECT * FROM post WHERE slug = '{}'",
+            request.uri().path().replace('/', "")
+        ))
+        .await
+        .unwrap();
 
-    Ok(result)
+    let val = results.first().unwrap().first();
+    if val.is_null() {
+        return Err(StatusCode::NOT_FOUND);
+    }
+
+    Ok(template(
+        Path::new("index.tsx"),
+        serde_json::to_string(&val).unwrap(),
+    ))
 }

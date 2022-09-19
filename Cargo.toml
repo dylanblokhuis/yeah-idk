@@ -30,3 +30,4 @@ tower-http = { version = "0.3.4", features = ["trace"] }
 serde = { version = "1.0.144", features = ["derive"] }
 serde_json = "1.0.85"
 axum-flash = "0.5.0"
+slugify = "0.1.0"

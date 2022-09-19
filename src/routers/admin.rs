@@ -7,6 +7,7 @@ use axum::{Extension, Form, Router};
 use axum_flash::{Flash, IncomingFlashes};
 use axum_macros::debug_handler;
 use serde::Deserialize;
+use slugify::slugify;
 
 use crate::database::Db;
 use crate::template;
@@ -32,7 +33,7 @@ async fn posts(
     Extension(db): Extension<Db>,
     // Extension(runtime): Extension<Runtime>,
 ) -> Result<Html<String>, StatusCode> {
-    let posts = db.query("SELECT * FROM post").await.unwrap();
+    let posts = db.query("SELECT * FROM post FETCH type;").await.unwrap();
 
     let data = if !posts.is_empty() {
         serde_json::to_string(&posts).unwrap()
@@ -62,11 +63,14 @@ async fn create_post(
         CREATE post SET
         title = '{}', 
         content = '{}', 
+        slug = '{}',
         created_at = time::now(),
         status = 'draft',
-        type = 'post'
+        type = postType:post
         "#,
-            input.title, input.content
+            input.title,
+            input.content,
+            slugify!(&input.title)
         ))
         .await;
 

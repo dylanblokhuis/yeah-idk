@@ -55,3 +55,19 @@ impl Db {
     //     Ok(results)
     // }
 }
+
+pub async fn setup_structure(db: &Db) {
+    let res = db.query("SELECT * FROM postType").await.unwrap();
+    println!("{:?}", res);
+    if !res.is_empty() && res.first().unwrap().is_truthy() {
+        return;
+    }
+
+    db.query("CREATE postType:page SET singular = 'Page', plural = 'Pages'")
+        .await
+        .unwrap();
+
+    db.query("CREATE postType:post SET singular = 'Post', plural = 'Posts', path_prefix = 'posts'")
+        .await
+        .unwrap();
+}
