@@ -1,6 +1,7 @@
 FROM lukemathwalker/cargo-chef:latest-rust-1.63 AS chef
 
-RUN apt install -y build-essential
+RUN apt-get update
+RUN apt-get install -y build-essential
 
 WORKDIR app
 
