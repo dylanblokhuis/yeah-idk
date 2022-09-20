@@ -1,5 +1,7 @@
 FROM lukemathwalker/cargo-chef:latest-rust-1.63 AS chef
 
+RUN apt install -y build-essential
+
 WORKDIR app
 
 FROM chef AS planner
@@ -18,5 +20,6 @@ RUN cargo build --release --bin experimental-cms
 FROM debian:buster-slim AS runtime
 WORKDIR app
 COPY --from=builder /app/target/release/experimental-cms /usr/local/bin
+COPY --from=builder /app/js .
 EXPOSE 3000
 ENTRYPOINT ["/usr/local/bin/experimental-cms"]
