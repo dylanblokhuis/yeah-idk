@@ -9,6 +9,7 @@ export default function Create() {
       <h1>Create post</h1>
 
       <form action="/admin/posts" method="post" style={{ display: 'flex', flexDirection: 'column', alignItems: 'start' }}>
+        <input type="text" name="post_type" value="postType:post" />
         <input type="text" name="title" placeholder="Title" />
         <textarea name="content" placeholder="Content"></textarea>
 

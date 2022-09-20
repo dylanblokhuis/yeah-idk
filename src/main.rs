@@ -14,6 +14,8 @@ use tracing_subscriber::prelude::__tracing_subscriber_SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 use tsx::compile_app;
 
+use crate::database::models::{Post, PostType};
+
 mod database;
 mod routers;
 mod tsx;
@@ -69,26 +71,48 @@ fn template(path: &Path, data: String) -> Html<String> {
     Html(result)
 }
 
-async fn page(
-    Extension(db): Extension<Db>,
-    request: Request<Body>,
-    // Extension(runtime): Extension<Runtime>,
-) -> impl IntoResponse {
-    let results = db
-        .query(&format!(
-            "SELECT * FROM post WHERE slug = '{}'",
-            request.uri().path().replace('/', "")
+async fn page(Extension(db): Extension<Db>, request: Request<Body>) -> impl IntoResponse {
+    let post_types = db
+        .query_first::<Vec<PostType>>("SELECT * FROM postType")
+        .await
+        .unwrap();
+
+    let maybe_post_type = post_types.iter().find(|it| {
+        if let Some(path_prefix) = &it.path_prefix {
+            request.uri().path().starts_with(path_prefix)
+        } else {
+            false
+        }
+    });
+
+    let mut prefix = "/";
+    let mut post_type_id = "postType:page";
+    if let Some(post_type) = maybe_post_type {
+        prefix = post_type.path_prefix.as_ref().unwrap();
+        post_type_id = &post_type.id;
+    }
+
+    let maybe_post = db
+        .query_first::<Vec<Post>>(&format!(
+            "SELECT * FROM post WHERE slug = '{}' AND type = '{}' AND status = 'published'",
+            request
+                .uri()
+                .path()
+                // remove the prefix so it matches the slug
+                .replace(prefix, "")
+                // if theres a trailing slash, remove it so it still matches the slug
+                .trim_end_matches('/'),
+            post_type_id
         ))
         .await
         .unwrap();
 
-    let val = results.first().unwrap().first();
-    if val.is_null() {
-        return Err(StatusCode::NOT_FOUND);
+    if let Some(post) = maybe_post.first() {
+        Ok(template(
+            Path::new("post.tsx"),
+            serde_json::to_string(&post).unwrap(),
+        ))
+    } else {
+        Err(StatusCode::NOT_FOUND)
     }
-
-    Ok(template(
-        Path::new("index.tsx"),
-        serde_json::to_string(&val).unwrap(),
-    ))
 }

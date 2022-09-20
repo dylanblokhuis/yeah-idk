@@ -1,6 +1,8 @@
 use surrealdb::{sql::Value, Datastore, Error, Session};
 use tokio::sync::{mpsc, oneshot};
 
+pub mod models;
+
 type QueryResult = (
     oneshot::Sender<Result<Vec<surrealdb::Response>, Error>>,
     String,
@@ -51,6 +53,26 @@ impl Db {
         Ok(results)
     }
 
+    pub async fn query_first<T: for<'de> serde::Deserialize<'de>>(
+        &self,
+        statement: &str,
+    ) -> Result<T, Error> {
+        let (tx, rx) = oneshot::channel();
+
+        self.query_sender
+            .send((tx, statement.to_string()))
+            .await
+            .unwrap();
+
+        let responses = rx.await.unwrap()?;
+        let response = responses.first().expect("Query returned nothing");
+        let result = response.result.as_ref().unwrap();
+
+        let val = serde_json::to_value(result).unwrap();
+
+        Ok(serde_json::from_value::<T>(val).unwrap())
+    }
+
     // pub async fn query<'a>(&self, statement: &'a str) -> Result<Vec<Value>, Error> {
     //     Ok(results)
     // }
@@ -67,7 +89,9 @@ pub async fn setup_structure(db: &Db) {
         .await
         .unwrap();
 
-    db.query("CREATE postType:post SET singular = 'Post', plural = 'Posts', path_prefix = 'posts'")
-        .await
-        .unwrap();
+    db.query(
+        "CREATE postType:post SET singular = 'Post', plural = 'Posts', path_prefix = '/posts/'",
+    )
+    .await
+    .unwrap();
 }

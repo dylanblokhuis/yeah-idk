@@ -49,6 +49,7 @@ async fn posts(
 struct CreatePost {
     title: String,
     content: String,
+    post_type: String,
 }
 
 #[debug_handler]
@@ -65,12 +66,13 @@ async fn create_post(
         content = '{}', 
         slug = '{}',
         created_at = time::now(),
-        status = 'draft',
-        type = postType:post
+        status = 'published',
+        type = {}
         "#,
             input.title,
             input.content,
-            slugify!(&input.title)
+            slugify!(&input.title),
+            input.post_type
         ))
         .await;
 
