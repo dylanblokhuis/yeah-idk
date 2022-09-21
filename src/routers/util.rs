@@ -10,7 +10,7 @@ pub struct TemplateError {
 #[derive(Debug, Deserialize, Serialize)]
 
 pub struct TemplateErrors {
-    errors: Vec<TemplateError>,
+    pub errors: Vec<TemplateError>,
 }
 
 impl TemplateErrors {

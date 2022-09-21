@@ -77,9 +77,11 @@ async fn page(Extension(db): Extension<Db>, request: Request<Body>) -> impl Into
         .await
         .unwrap();
 
+    let uri = request.uri().path().trim_end_matches('/');
+
     let maybe_post_type = post_types.iter().find(|it| {
         if let Some(path_prefix) = &it.path_prefix {
-            request.uri().path().starts_with(path_prefix)
+            uri.starts_with(path_prefix)
         } else {
             false
         }
@@ -95,13 +97,8 @@ async fn page(Extension(db): Extension<Db>, request: Request<Body>) -> impl Into
     let maybe_post = db
         .query_first::<Vec<Post>>(&format!(
             "SELECT * FROM post WHERE slug = '{}' AND type = '{}' AND status = 'published'",
-            request
-                .uri()
-                .path()
-                // remove the prefix so it matches the slug
-                .replace(prefix, "")
-                // if theres a trailing slash, remove it so it still matches the slug
-                .trim_end_matches('/'),
+            // remove the prefix so it matches the slug
+            uri.replace(prefix, ""),
             post_type_id
         ))
         .await

@@ -70,17 +70,31 @@ impl Db {
 
         let val = serde_json::to_value(result).unwrap();
 
-        Ok(serde_json::from_value::<T>(val).unwrap())
+        Ok(
+            serde_json::from_value::<T>(val.clone()).unwrap_or_else(|_| {
+                panic!(
+                    "Failed to convert to JSON, statement: '{}', results: {:?}",
+                    statement, val
+                )
+            }),
+        )
     }
-
-    // pub async fn query<'a>(&self, statement: &'a str) -> Result<Vec<Value>, Error> {
-    //     Ok(results)
-    // }
 }
 
 pub async fn setup_structure(db: &Db) {
+    // just for debugging
+    // dbg!(
+    //     "{:?}",
+    //     db.query(
+    //         r#"
+    //     SELECT * FROM postType FETCH post
+    // "#
+    //     )
+    //     .await
+    //     .unwrap()
+    // );
+
     let res = db.query("SELECT * FROM postType").await.unwrap();
-    println!("{:?}", res);
     if !res.is_empty() && res.first().unwrap().is_truthy() {
         return;
     }

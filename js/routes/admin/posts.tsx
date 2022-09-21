@@ -1,14 +1,15 @@
-import { Post, useRouteData } from '$lib'
+import { Post, Posts, useRouteData } from '$lib'
 import React from 'react'
 
 export default function Posts() {
-  const data = useRouteData<Post[]>();
+  const data = useRouteData<Posts>();
 
   return (
     <div>
-      <h1>Posts - <a href="/admin/posts/create">Create post</a></h1>
+      <a href="/admin">Back to overview</a>
+      <h1>{data.post_type.plural} - <a href={`/admin/posts/create?type=${data.post_type.id}`}>Create {data.post_type.singular}</a></h1>
       <div>
-        {data.map(item => (
+        {data.posts.map(item => (
           <div key={item.id}>
             {JSON.stringify(item)}
           </div>
